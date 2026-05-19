@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador + Sistema de Promesa de Compra</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --azul-navy: #003d71;
+            --naranja-fix: #f47920;
+            --gris-borde: #ddd;
+            --gris-fondo: #f4f7f6;
+            --verde-exito: #28a745;
+            --rojo-error: #dc3545;
+            --amarillo-promesa: #ffc107;
+        }
+        body { background-color: var(--gris-fondo); font-family: 'Roboto', sans-serif; }
+        .nav-secondary { background-color: var(--naranja-fix); padding: 12px 0; }
+        .nav-secondary .nav { display: flex; list-style: none; margin: 0 auto; padding: 0 50px; max-width: 1200px; }
+        .nav-secondary .nav-item { margin-right: 30px; }
+        .nav-secondary .nav-link { color: white !important; text-decoration: none; text-transform: uppercase; font-weight: bold; font-size: 14px; }
+        .container-cotizador { max-width: 1400px; margin: 30px auto; padding: 20px; }
+        .titulo-azul { color: var(--azul-navy); font-size: 28px; margin-bottom: 10px; }
+        
+        /* Buscador */
+        .search-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .search-box { display: flex; gap: 10px; margin-top: 15px; }
+        .search-box input { flex: 1; padding: 12px 20px; border: 2px solid var(--gris-borde); border-radius: 25px; }
+        .btn-buscar { background: var(--azul-navy); color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; }
+        
+        /* Resultados */
+        .resultados-busqueda { background: white; border-radius: 10px; margin-bottom: 25px; padding: 15px; display: none; }
+        .producto-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--gris-borde); }
+        .btn-agregar { background: var(--verde-exito); color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
+        
+        /* Tabs (pestañas) */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 24px; background: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .tab-btn.active { background: var(--azul-navy); color: white; }
+        .tab-panel { display: none; }
+        .tab-panel.active-panel { display: block; }
+        
+        /* Tablas */
+        .tabla-responsive { overflow-x: auto; background: white; border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+        .tabla-cotizacion { width: 100%; border-collapse: collapse; }
+        .tabla-cotizacion thead th { background-color: var(--azul-navy); color: white; padding: 12px; border: 1px solid white; }
+        .tabla-cotizacion td { border: 1px solid var(--gris-borde); padding: 12px; text-align: center; }
+        .cantidad-input { width: 70px; padding: 5px; text-align: center; }
+        .btn-eliminar { background: var(--rojo-error); color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-comprar { background: var(--verde-exito); color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-cancelar { background: var(--rojo-error); color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+        
+        /* Contador regresivo */
+        .contador { font-size: 12px; color: var(--amarillo-promesa); font-weight: bold; }
+        .contador.urgente { color: var(--rojo-error); }
+        
+        /* Totales */
+        .resumen-footer { display: flex; justify-content: flex-end; margin-top: 20px; }
+        .tabla-totales { width: 300px; background: white; border-collapse: collapse; }
+        .tabla-totales td { border: 1px solid var(--gris-borde); padding: 12px; }
+        .label-naranja { color: var(--naranja-fix); font-weight: bold; }
+        
+        /* Botones */
+        .acciones { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
+        .btn-guardar, .btn-enviar, .btn-comprar-todo { padding: 12px 24px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-guardar { background: var(--azul-navy); color: white; }
+        .btn-enviar { background: var(--naranja-fix); color: white; }
+        .btn-comprar-todo { background: var(--verde-exito); color: white; }
+        
+        .empty-msg { text-align: center; padding: 40px; color: #999; }
+        
+        @media (max-width: 768px) { .search-box { flex-direction: column; } .acciones { flex-direction: column; } .tabs { flex-wrap: wrap; } }
+    </style>
+</head>
+<body>
+
+<nav class="nav-secondary">
+    <ul class="nav">
+        <li class="nav-item"><a href="index.html" class="nav-link">Inicio</a></li>
+        <li class="nav-item"><a href="Ferreteria_Facturacion_BORRADOR.html" class="nav-link">Facturación</a></li>
+        <li class="nav-item"><a href="#" class="nav-link">Cotizador</a></li>
+        <li class="nav-item"><a href="Ferreteria_UbicarTienda_BORRADOR.html" class="nav-link">Ubica tu tienda</a></li>
+    </ul>
+</nav>
+
+<main class="container-cotizador">
+    <h2 class="titulo-azul">Cotizador + Sistema de Promesa de Compra</h2>
+    <p>Busca productos, cotiza, y tienes <strong>7 días</strong> para comprar antes de que se devuelvan al almacén.</p>
+
+    <!-- Buscador -->
+    <div class="search-section">
+        <div class="search-box">
+            <input type="text" id="buscador" placeholder="Buscar por código, clave o descripción">
+            <button class="btn-buscar" onclick="buscarProductos()"> Buscar</button>
+        </div>
+    </div>
+
+    <div id="resultadosPanel" class="resultados-busqueda">
+        <h3>Productos disponibles</h3>
+        <div id="listaProductos"></div>
+    </div>
+
+    <!-- TABS (Pestañas) -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="cotizando"> Cotizando (carrito)</button>
+        <button class="tab-btn" data-tab="promesa">En promesa (por comprar)</button>
+        <button class="tab-btn" data-tab="comprado">Comprados</button>
+    </div>
+
+    <!-- TAB 1: Cotizando (carrito actual) -->
+    <div id="tab-cotizando" class="tab-panel active-panel">
+        <div class="tabla-responsive">
+            <table class="tabla-cotizacion">
+                <thead><tr><th>Código</th><th>Descripción</th><th>Precio</th><th>Cantidad</th><th>Total</th><th>Acción</th></tr></thead>
+                <tbody id="cotizacionBody"><tr><td colspan="6" class="empty-msg">No hay productos en cotización</td></tr></tbody>
+            </table>
+        </div>
+        <div class="resumen-footer">
+            <table class="tabla-totales">
+                <tr><td class="label-naranja">Subtotal</td><td id="subtotal">$0.00</td></tr>
+                <tr><td class="label-naranja">IVA (16%)</td><td id="iva">$0.00</td></tr>
+                <tr><td class="label-naranja total-final">Total</td><td id="total">$0.00</td></tr>
+            </table>
+        </div>
+        <div class="acciones">
+            <button class="btn-guardar" onclick="guardarCotizacion()">Guardar Cotización</button>
+            <button class="btn-enviar" onclick="enviarCotizacion()"> Solicitar Cotización</button>
+            <button class="btn-apartar-todo" style="background: #ffc107; color: #333; padding: 12px 24px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;" onclick="apartarTodo()">Apartar Todo</button>    
+            <button class="btn-comprar-todo" onclick="comprarTodo()">Comprar Todo</button>
+        </div>
+    </div>
+
+    <!-- TAB 2: En promesa (productos apartados por 7 días) -->
+    <div id="tab-promesa" class="tab-panel">
+        <div class="tabla-responsive">
+            <table class="tabla-cotizacion">
+                <thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Total</th><th>Fecha límite</th><th>Días restantes</th><th>Acción</th></tr></thead>
+                <tbody id="promesaBody"><tr><td colspan="7" class="empty-msg"> No hay productos en promesa</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: Comprados -->
+    <div id="tab-comprado" class="tab-panel">
+        <div class="tabla-responsive">
+            <table class="tabla-cotizacion">
+                <thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Total</th><th>Fecha compra</th></tr></thead>
+                <tbody id="compradoBody"><tr><td colspan="5" class="empty-msg"> No hay productos comprados aún</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script>
+    // ========== CATÁLOGO DE PRODUCTOS (ALMACÉN) ==========
+    let catalogoProductos = [
+        { id: 1, codigo: "001", descripcion: "Taladro Percutor 1/2", precio: 1250.00, stock: 10 },
+        { id: 2, codigo: "002", descripcion: "Martillo Demoledor 1500W", precio: 2800.00, stock: 5 },
+        { id: 3, codigo: "003", descripcion: "Disco Corte Metal", precio: 180.00, stock: 50 },
+        { id: 4, codigo: "004", descripcion: "Llave Inglesa 12", precio: 95.00, stock: 20 },
+        { id: 5, codigo: "005", descripcion: "Desarmador Phillips", precio: 120.00, stock: 15 }
+    ];
+
+    // ========== ESTRUCTURAS DE DATOS ==========
+    let carrito = [];
+    let promesas = [];
+    let comprados = [];
+
+    // Cargar datos guardados en localStorage
+    function cargarDatos() {
+        const savedCarrito = localStorage.getItem('cotizacion_carrito');
+        const savedPromesas = localStorage.getItem('cotizacion_promesas');
+        const savedComprados = localStorage.getItem('cotizacion_comprados');
+        
+        if (savedCarrito) carrito = JSON.parse(savedCarrito);
+        if (savedPromesas) promesas = JSON.parse(savedPromesas);
+        if (savedComprados) comprados = JSON.parse(savedComprados);
+        
+        verificarPromesasVencidas();
+        renderizarTodo();
+    }
+
+    function guardarDatos() {
+        localStorage.setItem('cotizacion_carrito', JSON.stringify(carrito));
+        localStorage.setItem('cotizacion_promesas', JSON.stringify(promesas));
+        localStorage.setItem('cotizacion_comprados', JSON.stringify(comprados));
+    }
+
+    function verificarPromesasVencidas() {
+        const hoy = new Date();
+        let huboCambios = false;
+        
+        promesas = promesas.filter(promesa => {
+            const fechaLimite = new Date(promesa.fechaLimite);
+            if (fechaLimite < hoy) {
+                const producto = catalogoProductos.find(p => p.id === promesa.id);
+                if (producto) producto.stock += promesa.cantidad;
+                huboCambios = true;
+                return false;
+            }
+            return true;
+        });
+        
+        if (huboCambios) guardarDatos();
+    }
+
+    function buscarProductos() {
+        const busqueda = document.getElementById('buscador').value.toLowerCase();
+        if (!busqueda) { alert('Escribe algo para buscar'); return; }
+        
+        const resultados = catalogoProductos.filter(p => 
+            p.descripcion.toLowerCase().includes(busqueda) || 
+            p.codigo.includes(busqueda)
+        ).filter(p => p.stock > 0);
+        
+        const panel = document.getElementById('resultadosPanel');
+        const listaDiv = document.getElementById('listaProductos');
+        
+        if (resultados.length === 0) {
+            listaDiv.innerHTML = '<p> No se encontraron productos con stock disponible</p>';
+        } else {
+            listaDiv.innerHTML = resultados.map(p => `
+                <div class="producto-item">
+                    <div><strong>${p.descripcion}</strong><br> $${p.precio} |  Stock: ${p.stock}</div>
+                    <button class="btn-agregar" onclick="agregarAlCarrito(${p.id})">+ Agregar</button>
+                </div>
+            `).join('');
+        }
+        panel.style.display = 'block';
+    }
+
+    function agregarAlCarrito(id) {
+        const producto = catalogoProductos.find(p => p.id === id);
+        if (!producto || producto.stock <= 0) {
+            alert('Producto sin stock disponible');
+            return;
+        }
+        
+        const existente = carrito.find(item => item.id === id);
+        if (existente) {
+            if (existente.cantidad + 1 > producto.stock) {
+                alert(`Solo hay ${producto.stock} unidades disponibles`);
+                return;
+            }
+            existente.cantidad++;
+        } else {
+            carrito.push({ ...producto, cantidad: 1 });
+        }
+        
+        guardarDatos();
+        renderizarCarrito();
+        document.getElementById('resultadosPanel').style.display = 'none';
+        document.getElementById('buscador').value = '';
+    }
+
+    function comprarAhora(id) {
+        const item = carrito.find(i => i.id === id);
+        if (!item) return;
+        
+        const fechaLimite = new Date();
+        fechaLimite.setDate(fechaLimite.getDate() + 7);
+        
+        promesas.push({
+            ...item,
+            fechaLimite: fechaLimite.toISOString(),
+            fechaPromesa: new Date().toISOString()
+        });
+        
+        const producto = catalogoProductos.find(p => p.id === item.id);
+        if (producto) producto.stock -= item.cantidad;
+        
+        carrito = carrito.filter(i => i.id !== id);
+        
+        guardarDatos();
+        renderizarTodo();
+        alert(`Producto apartado por 7 días. Compra antes del ${fechaLimite.toLocaleDateString()}`);
+    }
+
+    async function comprarProductoDirecto(id) {
+    const item = carrito.find(i => i.id === id);
+    if (!item) return;
+    
+    try {
+        const response = await fetch('api_registrar_compra.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                productos: [{ id: item.id, cantidad: item.cantidad, precio: item.precio }]
+            })
+        });
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            alert(`¡Compra realizada! Ticket: ${resultado.numero_ticket}`);
+            
+            // Eliminar del carrito
+            carrito = carrito.filter(i => i.id !== id);
+            guardarDatos();
+            renderizarTodo();
+            
+            if (confirm('¿Deseas facturar esta compra?')) {
+                window.location.href = `Ferreteria_Facturacion_BORRADOR.html?ticket=${resultado.numero_ticket}`;
+            }
+        } else {
+            alert('❌ ' + resultado.mensaje);
+        }
+    } catch (error) {
+        alert('❌ Error de conexión');
+    }
+}
+
+    async function comprarTodo() {
+        if (carrito.length === 0) {
+            alert('No hay productos en la cotización');
+            return;
+        }
+        
+        try {
+            const response = await fetch('api_registrar_compra.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productos: carrito })
+            });
+            const resultado = await response.json();
+            
+            if (resultado.success) {
+                alert(`¡Compra realizada! Ticket: ${resultado.numero_ticket}`);
+                carrito = [];
+                guardarDatos();
+                renderizarTodo();
+                
+                if (confirm('¿Deseas facturar esta compra?')) {
+                    window.location.href = `Ferreteria_Facturacion_BORRADOR.html?ticket=${resultado.numero_ticket}`;
+                }
+            } else {
+                alert('❌ ' + resultado.mensaje);
+            }
+        } catch (error) {
+            alert('❌ Error de conexión');
+        }
+    }
+
+    async function apartarTodo() {
+    if (carrito.length === 0) {
+        alert('No hay productos en el carrito');
+        return;
+    }
+    
+    try {
+        const response = await fetch('api_guardar_promesa.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productos: carrito })
+        });
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            const fechaLimite = new Date();
+            fechaLimite.setDate(fechaLimite.getDate() + 7);
+            
+            carrito.forEach(item => {
+                promesas.push({
+                    ...item,
+                    fechaLimite: fechaLimite.toISOString(),
+                    fechaPromesa: new Date().toISOString()
+                });
+                
+                const producto = catalogoProductos.find(p => p.id === item.id);
+                if (producto) producto.stock -= item.cantidad;
+            });
+            
+            carrito = [];
+            guardarDatos();
+            renderizarTodo();
+            alert(`✅ ${resultado.cantidad} productos apartados por 7 días.`);
+        } else {
+            alert('❌ ' + resultado.mensaje);
+        }
+    } catch (error) {
+        alert('❌ Error de conexión');
+    }
+}
+
+    async function finalizarCompra(id) {
+        const item = promesas.find(p => p.id === id);
+        if (!item) return;
+        
+        try {
+            const response = await fetch('api_registrar_compra.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    productos: [{ id: item.id, cantidad: item.cantidad, precio: item.precio }]
+                })
+            });
+            const resultado = await response.json();
+            
+            if (resultado.success) {
+                comprados.push({
+                    ...item,
+                    fechaCompra: new Date().toISOString(),
+                    numero_ticket: resultado.numero_ticket
+                });
+                
+                promesas = promesas.filter(p => p.id !== id);
+                guardarDatos();
+                renderizarTodo();
+                alert(`¡Compra realizada! Ticket: ${resultado.numero_ticket}`);
+            } else {
+                alert('❌ Error al procesar el pago: ' + resultado.mensaje);
+            }
+        } catch (error) {
+            alert('❌ Error de conexión con el servidor');
+        }
+    }
+
+    function cancelarPromesa(id) {
+        const item = promesas.find(p => p.id === id);
+        if (!item) return;
+        
+        const producto = catalogoProductos.find(p => p.id === item.id);
+        if (producto) producto.stock += item.cantidad;
+        
+        promesas = promesas.filter(p => p.id !== id);
+        
+        guardarDatos();
+        renderizarTodo();
+        alert(`Promesa cancelada. ${item.descripcion} devuelto al almacén.`);
+    }
+
+    function eliminarDelCarrito(id) {
+        carrito = carrito.filter(i => i.id !== id);
+        guardarDatos();
+        renderizarCarrito();
+    }
+
+    function actualizarCantidadCarrito(id, nuevaCantidad) {
+        const item = carrito.find(i => i.id === id);
+        if (!item) return;
+        
+        const producto = catalogoProductos.find(p => p.id === id);
+        if (nuevaCantidad <= 0) {
+            eliminarDelCarrito(id);
+        } else if (producto && nuevaCantidad > producto.stock) {
+            alert(`Stock máximo disponible: ${producto.stock}`);
+        } else {
+            item.cantidad = nuevaCantidad;
+            guardarDatos();
+            renderizarCarrito();
+        }
+    }
+
+    function diasRestantes(fechaLimite) {
+        const hoy = new Date();
+        const limite = new Date(fechaLimite);
+        const diff = Math.ceil((limite - hoy) / (1000 * 60 * 60 * 24));
+        return diff;
+    }
+
+    function renderizarCarrito() {
+        const tbody = document.getElementById('cotizacionBody');
+        let subtotal = 0;
+        
+        if (carrito.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-msg"> No hay productos en cotización</td></tr>';
+            document.getElementById('subtotal').innerText = '$0.00';
+            document.getElementById('iva').innerText = '$0.00';
+            document.getElementById('total').innerText = '$0.00';
+            return;
+        }
+        
+        const filas = carrito.map(item => {
+            const totalItem = item.precio * item.cantidad;
+            subtotal += totalItem;
+            return `
+    <tr>
+        <td>${item.codigo}</td>
+        <td style="text-align:left">${item.descripcion}</td>
+        <td>$${item.precio.toFixed(2)}</td>
+        <td><input type="number" class="cantidad-input" value="${item.cantidad}" min="1" onchange="actualizarCantidadCarrito(${item.id}, parseInt(this.value))"></td>
+        <td>$${totalItem.toFixed(2)}</td>
+        <td>
+            <button class="btn-comprar" style="background: #28a745;" onclick="comprarProductoDirecto(${item.id})">Comprar</button>
+            <button class="btn-apartar" style="background: #ffc107; color: #white; padding: 5px 12px; border-radius: 4px; border: none; cursor: pointer;" onclick="comprarAhora(${item.id})">Apartar</button>
+            <button class="btn-eliminar" style="background: #dc3545;" onclick="eliminarDelCarrito(${item.id})">Eliminar</button>
+        </td>
+    </tr>
+`;
+        });
+        
+        tbody.innerHTML = filas.join('');
+        const iva = subtotal * 0.16;
+        const total = subtotal + iva;
+        document.getElementById('subtotal').innerText = `$${subtotal.toFixed(2)}`;
+        document.getElementById('iva').innerText = `$${iva.toFixed(2)}`;
+        document.getElementById('total').innerText = `$${total.toFixed(2)}`;
+    }
+    
+    function renderizarPromesas() {
+        const tbody = document.getElementById('promesaBody');
+        if (promesas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-msg"> No hay productos en promesa</td></tr>';
+            return;
+        }
+        
+        const filas = promesas.map(p => {
+            const dias = diasRestantes(p.fechaLimite);
+            const claseUrgente = dias <= 2 ? 'urgente' : '';
+            return `
+                <tr>
+                    <td>${p.codigo}</td>
+                    <td style="text-align:left">${p.descripcion}</td>
+                    <td>${p.cantidad}</td>
+                    <td>$${(p.precio * p.cantidad).toFixed(2)}</td>
+                    <td>${new Date(p.fechaLimite).toLocaleDateString()}</td>
+                    <td class="contador ${claseUrgente}">${dias} días</td>
+                    <td><button class="btn-comprar" onclick="finalizarCompra(${p.id})">Pagar</button> <button class="btn-cancelar" onclick="cancelarPromesa(${p.id})">Cancelar</button></td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = filas.join('');
+    }
+    
+    function renderizarComprados() {
+        const tbody = document.getElementById('compradoBody');
+        if (comprados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">No hay productos comprados aún</td></tr>';
+            return;
+        }
+        
+        const filas = comprados.map(c => `
+            <tr>
+                <td>${c.codigo}</td>
+                <td style="text-align:left">${c.descripcion}</td>
+                <td>${c.cantidad}</td>
+                <td>$${(c.precio * c.cantidad).toFixed(2)}</td>
+                <td>${new Date(c.fechaCompra).toLocaleDateString()}</td>
+            </tr>
+        `);
+        tbody.innerHTML = filas.join('');
+    }
+    
+    function renderizarTodo() {
+        renderizarCarrito();
+        renderizarPromesas();
+        renderizarComprados();
+    }
+
+    function cambiarTab(tabId) {
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active-panel'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active-panel');
+        document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+    }
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => cambiarTab(btn.dataset.tab));
+    });
+    
+    async function guardarCotizacion() {
+    if (carrito.length === 0) {
+        alert('No hay productos en la cotización');
+        return;
+    }
+    
+    try {
+        const response = await fetch('api_guardar_cotizacion.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productos: carrito })
+        });
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            alert(`✅ Cotización guardada con éxito. Folio: ${resultado.folio}`);
+        } else {
+            alert('❌ ' + resultado.mensaje);
+        }
+    } catch (error) {
+        alert('❌ Error de conexión con el servidor');
+    }
+}
+    
+    function enviarCotizacion() {
+        if (carrito.length === 0) { alert('No hay productos'); return; }
+        alert(`Cotización enviada. Te contactaremos en breve. Total: $${document.getElementById('total').innerText}`);
+    }
+    
+    document.getElementById('buscador').addEventListener('keypress', e => { if (e.key === 'Enter') buscarProductos(); });
+    
+    setInterval(() => {
+        verificarPromesasVencidas();
+        renderizarPromesas();
+    }, 60000);
+    
+    cargarDatos();
+</script>
+
+<footer style="background-color: #003d71; color: white; margin-top: 60px; padding: 30px; text-align: center;">
+    <p>&copy; 2026 Gorilla Tools - Sistema de Promesa de Compra (7 días para pagar)</p>
+</footer>
+
+</body>
+</html>

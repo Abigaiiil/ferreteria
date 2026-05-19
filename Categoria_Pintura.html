@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pintura y Adhesivos - Gorilla Tools</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --azul-navy: #003d71;
+            --naranja-fix: #f47920;
+            --gris-fondo: #f8f9fa;
+            --gris-borde: #e9ecef;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gris-fondo);
+        }
+
+        .header-main {
+            background-color: var(--azul-navy);
+        }
+
+        .nav-secondary {
+            background-color: var(--naranja-fix);
+        }
+
+        .nav-secondary .nav-link {
+            color: white !important;
+            font-weight: bold;
+        }
+
+        .search-bar input {
+            border-radius: 25px 0 0 25px;
+            border: none;
+        }
+
+        .search-bar button {
+            border-radius: 0 25px 25px 0;
+            background: white;
+        }
+
+        .breadcrumb-custom {
+            background: transparent;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb-custom a {
+            color: var(--azul-navy);
+            text-decoration: none;
+        }
+
+        .breadcrumb-custom a:hover {
+            color: var(--naranja-fix);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .category-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--azul-navy);
+        }
+
+        .product-count {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .filters-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--gris-borde);
+        }
+
+        .show-select, .sort-select {
+            padding: 8px 15px;
+            border: 1px solid var(--gris-borde);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .product-checkbox {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--naranja-fix);
+        }
+
+        .product-brand {
+            font-size: 12px;
+            color: var(--naranja-fix);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .product-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--azul-navy);
+            margin-bottom: 8px;
+            min-height: 40px;
+            padding-right: 25px;
+        }
+
+        .product-details {
+            font-size: 11px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--azul-navy);
+            margin-bottom: 12px;
+        }
+
+        .selection-info {
+            background: #e8f4fd;
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .selected-count {
+            font-weight: bold;
+            color: var(--azul-navy);
+        }
+
+        .btn-cotizar-seleccion {
+            background: var(--azul-navy);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-cotizar-seleccion:hover {
+            background: var(--naranja-fix);
+            transform: scale(1.02);
+        }
+
+        .btn-cotizar-todos {
+            background: var(--naranja-fix);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+
+        .btn-cotizar-todos:hover {
+            background: var(--azul-navy);
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            padding: 8px 14px;
+            border: 1px solid var(--gris-borde);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover {
+            background: var(--azul-navy);
+            color: white;
+            border-color: var(--azul-navy);
+        }
+
+        .pagination-btn.active {
+            background: var(--azul-navy);
+            color: white;
+            border-color: var(--azul-navy);
+        }
+
+        .pagination-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 9999;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 15px;
+            }
+            .filters-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .selection-info {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header-main py-3">
+    <div class="container-fluid px-5">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <a href="index.html">
+                    <img src="Logo_GorilaTools-removebg.png" alt="Logo Gorilla Tools" class="img-fluid" style="max-height: 70px;" 
+                         onerror="this.src='https://via.placeholder.com/150x70?text=Gorilla+Tools'">
+                </a>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group search-bar">
+                    <input type="text" id="buscador" class="form-control" placeholder="Buscar productos...">
+                    <button class="btn btn-light" id="btnBuscar">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex justify-content-end align-items-center text-white">
+                <i class="bi bi-person-circle fs-4 me-2"></i>
+                <a href="Ferreteria_Facturacion_BORRADOR.html" class="text-white text-decoration-none">Mi cuenta</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<nav class="nav-secondary py-2">
+    <div class="container">
+        <ul class="nav justify-content-start gap-4 text-uppercase fw-bold">
+            <li class="nav-item"><a href="index.html" class="nav-link text-white">Inicio</a></li>
+            <li class="nav-item"><a href="Ferreteria_Facturacion_BORRADOR.html" class="nav-link text-white">Facturación</a></li>
+            <li class="nav-item"><a href="Ferreteria_Cotizacion_BORRADOR.html" class="nav-link text-white">Cotizador</a></li>
+            <li class="nav-item"><a href="Ferreteria_UbicarTienda_BORRADOR.html" class="nav-link text-white">Ubica tu tienda</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="container my-4">
+    <div class="breadcrumb-custom">
+        <a href="index.html">Inicio</a> / 
+        <a href="#">Pintura y Adhesivos</a>
+    </div>
+
+    <div class="category-header">
+        <h1 class="category-title">Pintura y Adhesivos <span class="product-count" id="productCount"></span></h1>
+    </div>
+
+    <div class="filters-bar">
+        <div>
+            <label class="me-2">Mostrar:</label>
+            <select id="showPerPage" class="show-select">
+                <option value="24">24</option>
+                <option value="48">48</option>
+                <option value="96">96</option>
+            </select>
+        </div>
+        <div>
+            <label class="me-2">Ordenar por:</label>
+            <select id="sortBy" class="sort-select">
+                <option value="relevancia">Relevancia</option>
+                <option value="precio-asc">Precio: menor a mayor</option>
+                <option value="precio-desc">Precio: mayor a menor</option>
+                <option value="nombre">Nombre: A-Z</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Barra de selección y cotización -->
+    <div class="selection-info">
+        <div>
+            <i class="bi bi-check2-square"></i>
+            Productos seleccionados: <span id="selectedCount" class="selected-count">0</span>
+        </div>
+        <div>
+            <button id="cotizarSeleccionadosBtn" class="btn-cotizar-seleccion">
+                <i class="bi bi-cart-plus"></i> Cotizar seleccionados
+            </button>
+        </div>
+    </div>
+
+    <div id="productsGrid" class="products-grid"></div>
+    <div id="pagination" class="pagination-container"></div>
+</main>
+
+<div id="toastNotification" class="toast-notification"></div>
+
+<script>
+    // ========== CATÁLOGO DE PRODUCTOS ==========
+    const productos = [
+        { id: 1, nombre: "Rodillo para pintar 9 x 3/8\"", marca: "TRUPER", clave: "ROPI-910", codigo: "13875", precio: 63.00, categoria: "pintura" },
+        { id: 2, nombre: "Mini Rodillo para pintar 4\" x 3/8\"", marca: "TRUPER", clave: "ROPI-410E", codigo: "13903", precio: 49.00, categoria: "pintura" },
+        { id: 3, nombre: "Cinta de empaque 48 m", marca: "TRUPER", clave: "CTR-150", codigo: "12557", precio: 59.00, categoria: "adhesivos" },
+        { id: 4, nombre: "Cinta masking tape de 2\" x 50 m", marca: "TRUPER", clave: "MSK-2", codigo: "12593", precio: 73.00, categoria: "adhesivos" },
+        { id: 5, nombre: "Cinta masking tape azul de 1\" x 50 m", marca: "TRUPER", clave: "MSK-1A", codigo: "12622", precio: 64.00, categoria: "adhesivos" },
+        { id: 6, nombre: "Cinta doble cara de 19 mm x 5 m", marca: "TRUPER", clave: "CDC-1950", codigo: "11725", precio: 45.00, categoria: "adhesivos" },
+        { id: 7, nombre: "Cinta de empaque 48 mm", marca: "TRUPER", clave: "CCA-50", codigo: "12554", precio: 22.00, categoria: "adhesivos" },
+        { id: 8, nombre: "Espuma expansiva de poliuretano", marca: "TRUPER", clave: "ESBX-750", codigo: "15305", precio: 229.00, categoria: "adhesivos" },
+        { id: 9, nombre: "Cinta masking tape azul de 2\" x 50 m", marca: "TRUPER", clave: "MSK-2A", codigo: "12624", precio: 125.00, categoria: "adhesivos" },
+        { id: 10, nombre: "Balsa con 1 kg de barras de silicón", marca: "TRUPER", clave: "REP-PIPE-1/2G", codigo: "100080", precio: 229.00, categoria: "adhesivos" },
+        { id: 11, nombre: "Pintura Vinílica Blanca 1L", marca: "COMEX", clave: "VIN-101", codigo: "20001", precio: 185.00, categoria: "pintura" },
+        { id: 12, nombre: "Pintura Esmalte Brillante Negro", marca: "COMEX", clave: "ESM-202", codigo: "20002", precio: 210.00, categoria: "pintura" },
+        { id: 13, nombre: "Brocha plana 2\"", marca: "PRETUL", clave: "BRO-2", codigo: "30001", precio: 35.00, categoria: "pintura" },
+        { id: 14, nombre: "Brocha angular 1.5\"", marca: "PRETUL", clave: "BRO-1.5A", codigo: "30002", precio: 28.00, categoria: "pintura" },
+        { id: 15, nombre: "Cinta masking tape verde 1\"", marca: "3M", clave: "3M-MSK-1", codigo: "40001", precio: 55.00, categoria: "adhesivos" },
+        { id: 16, nombre: "Silicon frío transparente 300ml", marca: "SISTA", clave: "SIL-300", codigo: "50001", precio: 42.00, categoria: "adhesivos" }
+    ];
+
+    let productosSeleccionados = new Set(); // Almacena IDs seleccionados
+    let currentPage = 1;
+    let itemsPerPage = 24;
+    let currentSort = "relevancia";
+    let searchTerm = "";
+
+    function mostrarNotificacion(mensaje, tipo = 'success') {
+        const toast = document.getElementById('toastNotification');
+        toast.textContent = mensaje;
+        toast.style.backgroundColor = tipo === 'success' ? '#28a745' : '#dc3545';
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+
+    function actualizarContadorSeleccion() {
+        document.getElementById('selectedCount').innerText = productosSeleccionados.size;
+    }
+
+    function toggleSeleccion(id) {
+        if (productosSeleccionados.has(id)) {
+            productosSeleccionados.delete(id);
+        } else {
+            productosSeleccionados.add(id);
+        }
+        actualizarContadorSeleccion();
+        // Actualizar el checkbox visualmente sin re-renderizar todo
+        const checkbox = document.getElementById(`chk_${id}`);
+        if (checkbox) checkbox.checked = productosSeleccionados.has(id);
+    }
+
+    function seleccionarTodos() {
+        const productosFiltrados = obtenerProductosFiltradosYOrdenados();
+        productosFiltrados.forEach(p => productosSeleccionados.add(p.id));
+        actualizarContadorSeleccion();
+        renderizarProductos(); // Re-render para actualizar checkboxes
+        mostrarNotificacion(`✅ Se seleccionaron ${productosFiltrados.length} productos`);
+    }
+
+    function obtenerProductosFiltradosYOrdenados() {
+        let filtered = [...productos];
+        if (searchTerm) {
+            filtered = filtered.filter(p => 
+                p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.clave.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.codigo.includes(searchTerm)
+            );
+        }
+        
+        switch (currentSort) {
+            case 'precio-asc': filtered.sort((a, b) => a.precio - b.precio); break;
+            case 'precio-desc': filtered.sort((a, b) => b.precio - a.precio); break;
+            case 'nombre': filtered.sort((a, b) => a.nombre.localeCompare(b.nombre)); break;
+            default: break;
+        }
+        return filtered;
+    }
+
+    function obtenerProductosSeleccionados() {
+        return productos.filter(p => productosSeleccionados.has(p.id));
+    }
+
+    function cotizarProductos(productosACotizar) {
+        if (productosACotizar.length === 0) {
+            mostrarNotificacion('⚠️ No hay productos seleccionados para cotizar', 'error');
+            return;
+        }
+        
+        const carritoParaCotizar = productosACotizar.map(p => ({
+            id: p.id,
+            nombre: p.nombre,
+            precio: p.precio,
+            codigo: p.codigo,
+            clave: p.clave,
+            cantidad: 1
+        }));
+        
+        localStorage.setItem('carritoGorilla', JSON.stringify(carritoParaCotizar));
+        mostrarNotificacion(`📋 ${carritoParaCotizar.length} producto(s) enviados al cotizador`);
+        
+        setTimeout(() => {
+            window.location.href = 'Ferreteria_Cotizacion_BORRADOR.html';
+        }, 500);
+    }
+
+    function cotizarSeleccionados() {
+        const seleccionados = obtenerProductosSeleccionados();
+        cotizarProductos(seleccionados);
+    }
+
+    function cotizarTodos() {
+        const todos = obtenerProductosFiltradosYOrdenados();
+        if (todos.length === 0) {
+            mostrarNotificacion('⚠️ No hay productos para cotizar', 'error');
+            return;
+        }
+        cotizarProductos(todos);
+    }
+
+    function renderizarProductos() {
+        const productosFiltrados = obtenerProductosFiltradosYOrdenados();
+        const totalProductos = productosFiltrados.length;
+        document.getElementById('productCount').innerHTML = `(${totalProductos} productos)`;
+        
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedProducts = productosFiltrados.slice(startIndex, endIndex);
+        
+        const grid = document.getElementById('productsGrid');
+        
+        if (paginatedProducts.length === 0) {
+            grid.innerHTML = '<div class="text-center py-5"><h3>No se encontraron productos</h3><p>Intenta con otra búsqueda</p></div>';
+            return;
+        }
+        
+        grid.innerHTML = paginatedProducts.map(producto => `
+            <div class="product-card">
+                <input type="checkbox" class="product-checkbox" id="chk_${producto.id}" 
+                       ${productosSeleccionados.has(producto.id) ? 'checked' : ''}
+                       onchange="toggleSeleccion(${producto.id})">
+                <div class="product-brand">${producto.marca}</div>
+                <div class="product-name">${producto.nombre}</div>
+                <div class="product-details">
+                    Clave: ${producto.clave} | Código: ${producto.codigo}
+                </div>
+                <div class="product-price">$${producto.precio.toFixed(2)}</div>
+            </div>
+        `).join('');
+        
+        renderizarPaginacion(totalProductos);
+    }
+
+    function renderizarPaginacion(totalItems) {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const paginationDiv = document.getElementById('pagination');
+        
+        if (totalPages <= 1) {
+            paginationDiv.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        html += `<button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" onclick="cambiarPagina(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>« Anterior</button>`;
+        
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        
+        if (endPage - startPage + 1 < maxButtons) {
+            startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+        
+        if (startPage > 1) {
+            html += `<button class="pagination-btn" onclick="cambiarPagina(1)">1</button>`;
+            if (startPage > 2) html += `<span class="px-2">...</span>`;
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="cambiarPagina(${i})">${i}</button>`;
+        }
+        
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) html += `<span class="px-2">...</span>`;
+            html += `<button class="pagination-btn" onclick="cambiarPagina(${totalPages})">${totalPages}</button>`;
+        }
+        
+        html += `<button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" onclick="cambiarPagina(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Siguiente »</button>`;
+        
+        paginationDiv.innerHTML = html;
+    }
+
+    function cambiarPagina(page) {
+        const totalItems = obtenerProductosFiltradosYOrdenados().length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderizarProductos();
+            window.scrollTo({ top: 300, behavior: 'smooth' });
+        }
+    }
+
+    // Event listeners
+    document.getElementById('showPerPage')?.addEventListener('change', (e) => {
+        itemsPerPage = parseInt(e.target.value);
+        currentPage = 1;
+        renderizarProductos();
+    });
+    
+    document.getElementById('sortBy')?.addEventListener('change', (e) => {
+        currentSort = e.target.value;
+        currentPage = 1;
+        renderizarProductos();
+    });
+    
+    document.getElementById('btnBuscar')?.addEventListener('click', () => {
+        searchTerm = document.getElementById('buscador').value;
+        currentPage = 1;
+        renderizarProductos();
+    });
+    
+    document.getElementById('buscador')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            searchTerm = e.target.value;
+            currentPage = 1;
+            renderizarProductos();
+        }
+    });
+    
+    document.getElementById('cotizarSeleccionadosBtn')?.addEventListener('click', cotizarSeleccionados);
+    document.getElementById('cotizarTodosBtn')?.addEventListener('click', () => {
+        seleccionarTodos();
+        setTimeout(() => cotizarSeleccionados(), 100);
+    });
+
+    // Inicializar
+    renderizarProductos();
+    actualizarContadorSeleccion();
+    
+    console.log("✅ Página de productos cargada (modo solo cotización)");
+</script>
+
+<footer style="background-color: #003d71; color: white; margin-top: 60px; padding: 40px 20px 20px;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <div class="row">
+            <div class="col-md-3">
+                <img src="Logo_GorilaTools-removebg.png" alt="Gorilla Tools" style="max-height: 50px; margin-bottom: 15px;" 
+                     onerror="this.src='https://via.placeholder.com/150x50?text=Gorilla+Tools'">
+                <p style="font-size: 14px; opacity: 0.8;">Tu ferretería de confianza con las mejores herramientas.</p>
+            </div>
+            <div class="col-md-3">
+                <h4 style="color: #f47920; font-size: 18px;">Enlaces rápidos</h4>
+                <ul class="list-unstyled">
+                    <li><a href="index.html" style="color: white; text-decoration: none;">Inicio</a></li>
+                    <li><a href="Ferreteria_Facturacion_BORRADOR.html" style="color: white; text-decoration: none;">Facturación</a></li>
+                    <li><a href="Ferreteria_Cotizacion_BORRADOR.html" style="color: white; text-decoration: none;">Cotizador</a></li>
+                    <li><a href="Ferreteria_UbicarTienda_BORRADOR.html" style="color: white; text-decoration: none;">Ubica tu tienda</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4 style="color: #f47920; font-size: 18px;">Contacto</h4>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-telephone-fill me-2"></i> 868 455 9524</li>
+                    <li><i class="bi bi-envelope-fill me-2"></i> comprasonline@gorillatools.com</li>
+                    <li><i class="bi bi-geo-alt-fill me-2"></i> Matamoros / Reynosa, Tamps.</li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4 style="color: #f47920; font-size: 18px;">Horarios</h4>
+                <ul class="list-unstyled">
+                    <li>Lun - Vie: 8:00 - 20:00</li>
+                    <li>Sábado: 9:00 - 18:00</li>
+                    <li>Domingo: Cerrado</li>
+                </ul>
+            </div>
+        </div>
+        <hr style="border-color: #f47920; margin: 30px 0 20px;">
+        <div class="text-center">
+            <p>&copy; 2026 Gorilla Tools - Todos los derechos reservados</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
