@@ -106,23 +106,81 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    
 const productos = <?php echo json_encode($productos); ?>;
-    function mostrarModal(mensaje, titulo = "Notificación") {
-        const modalElement = document.getElementById('modalAlerta');
-        if (modalElement) {
-            document.getElementById('modalAlertaTitulo').innerText = titulo;
-            document.getElementById('modalAlertaMensaje').innerHTML = mensaje;
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
-        }
+
+// Usuario activo desde PHP (NO llamar session_start ni conexion aquí, ya están al inicio del archivo)
+const usuarioActivo = <?php 
+    $user = null;
+    if (isset($_SESSION['usuario_id'])) {
+        $user = ['id' => $_SESSION['usuario_id']];
     }
+    echo json_encode($user);
+?>;
+
+function mostrarModal(mensaje, titulo = "Notificación") {
+    const modalElement = document.getElementById('modalAlerta');
+    if (modalElement) {
+        document.getElementById('modalAlertaTitulo').innerText = titulo;
+        document.getElementById('modalAlertaMensaje').innerHTML = mensaje;
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+}
 
 let seleccionados = new Set(), currentPage = 1, itemsPerPage = 24, currentSort = "relevancia", searchTerm = "";
-function notificar(m) { const t=document.getElementById('toastNotification'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
-function actContador() { document.getElementById('selectedCount').innerText = seleccionados.size; }
-function toggleSel(id) { if(seleccionados.has(id)) seleccionados.delete(id); else seleccionados.add(id); actContador(); const cb=document.getElementById(`chk_${id}`); if(cb) cb.checked=seleccionados.has(id); }
-function filtrar() { let f = productos.filter(p=>!searchTerm||p.nombre.toLowerCase().includes(searchTerm)||p.clave.toLowerCase().includes(searchTerm)); if(currentSort==='precio-asc') f.sort((a,b)=>a.precio-b.precio); if(currentSort==='precio-desc') f.sort((a,b)=>b.precio-a.precio); return f; }
+
+function notificar(m) { 
+    const t = document.getElementById('toastNotification'); 
+    t.textContent = m; 
+    t.style.display = 'block'; 
+    setTimeout(() => t.style.display = 'none', 3000); 
+}
+
+function actContador() { 
+    document.getElementById('selectedCount').innerText = seleccionados.size; 
+}
+
+function guardarSeleccionadosEnStorage() {
+    if (!usuarioActivo) return;
+    const idsSeleccionados = Array.from(seleccionados);
+    sessionStorage.setItem(`seleccionados_${usuarioActivo.id}`, JSON.stringify(idsSeleccionados));
+    console.log("💾 Seleccionados guardados:", idsSeleccionados);
+}
+
+function cargarSeleccionadosDesdeStorage() {
+    if (!usuarioActivo) return;
+    const guardado = sessionStorage.getItem(`seleccionados_${usuarioActivo.id}`);
+    if (guardado) {
+        const ids = JSON.parse(guardado);
+        seleccionados.clear();
+        ids.forEach(id => seleccionados.add(id));
+        actContador();
+        renderizar();
+        console.log("📦 Seleccionados cargados:", ids);
+    }
+}
+
+function toggleSel(id) { 
+    if(seleccionados.has(id)) {
+        seleccionados.delete(id);
+    } else {
+        seleccionados.add(id);
+    }
+    actContador(); 
+    
+    const cb = document.getElementById(`chk_${id}`); 
+    if(cb) cb.checked = seleccionados.has(id);
+    
+    guardarSeleccionadosEnStorage();
+    console.log("🔄 Toggle producto:", id);
+}
+
+function filtrar() { 
+    let f = productos.filter(p => !searchTerm || p.nombre.toLowerCase().includes(searchTerm) || p.clave.toLowerCase().includes(searchTerm)); 
+    if(currentSort === 'precio-asc') f.sort((a, b) => a.precio - b.precio); 
+    if(currentSort === 'precio-desc') f.sort((a, b) => b.precio - a.precio); 
+    return f; 
+}
 
 function cotizar(productosList) {
     if (productosList.length === 0) {
@@ -138,7 +196,6 @@ function cotizar(productosList) {
                 return;
             }
             
-            // Preparar productos
             const productosParaCarrito = productosList.map(p => ({ 
                 id: p.id, 
                 codigo: p.codigo || p.clave || 'N/A',
@@ -147,7 +204,6 @@ function cotizar(productosList) {
                 cantidad: 1
             }));
             
-            // Guardar en sesión PHP mediante fetch
             fetch('api_guardar_carrito.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -157,6 +213,7 @@ function cotizar(productosList) {
             .then(data => {
                 if (data.success) {
                     notificar(`${productosList.length} producto(s) enviados al cotizador`);
+                    sessionStorage.removeItem(`seleccionados_${usuario.id}`);
                     seleccionados.clear();
                     actContador();
                     renderizar();
@@ -174,14 +231,9 @@ function cotizar(productosList) {
         });
 }
 
-
 function cotizarSel() { 
-    // Obtener productos seleccionados directamente del DOM
     const checkboxes = document.querySelectorAll('.product-checkbox:checked');
     const idsSeleccionados = Array.from(checkboxes).map(cb => parseInt(cb.id.replace('chk_', '')));
-    
-    console.log("✅ Checkboxes marcados:", checkboxes.length);
-    console.log("✅ IDs seleccionados:", idsSeleccionados);
     
     if (idsSeleccionados.length === 0) {
         notificar('No hay productos seleccionados');
@@ -189,50 +241,54 @@ function cotizarSel() {
     }
     
     const productosSeleccionados = productos.filter(p => idsSeleccionados.includes(p.id));
-    console.log("📦 Productos a cotizar:", productosSeleccionados);
-    
     cotizar(productosSeleccionados);
 }
-function toggleSel(id) { 
-    if(seleccionados.has(id)) {
-        seleccionados.delete(id);
-    } else {
-        seleccionados.add(id);
-    }
-    actContador(); 
-    
-    // Asegurar que el checkbox refleje el estado
-    const cb = document.getElementById(`chk_${id}`); 
-    if(cb) cb.checked = seleccionados.has(id);
-    
-    console.log("🔄 Toggle producto:", id, "Seleccionados:", Array.from(seleccionados));
-}
-
 
 function renderizar() {
     const filtrados = filtrar();
     document.getElementById('productCount').innerHTML = `(${filtrados.length})`;
-    const start = (currentPage-1)*itemsPerPage;
-    const pag = filtrados.slice(start, start+itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    const pag = filtrados.slice(start, start + itemsPerPage);
     const grid = document.getElementById('productsGrid');
-    if(pag.length===0){grid.innerHTML='<div class="text-center py-5"><h3>No hay productos</h3></div>';return;}
-    grid.innerHTML = pag.map(p=>`<div class="product-card"><input type="checkbox" class="product-checkbox" id="chk_${p.id}" ${seleccionados.has(p.id)?'checked':''} onchange="toggleSel(${p.id})"><div class="product-brand">${p.marca}</div><div class="product-name">${p.nombre}</div><div class="product-details">Clave: ${p.clave}</div><div class="product-price">$${p.precio.toFixed(2)}</div></div>`).join('');
-    const totalPages = Math.ceil(filtrados.length/itemsPerPage);
-    let html = `<button class="pagination-btn" onclick="cambiarPag(${currentPage-1})" ${currentPage===1?'disabled':''}>«</button>`;
-    for(let i=1;i<=totalPages;i++) html+=`<button class="pagination-btn ${i===currentPage?'active':''}" onclick="cambiarPag(${i})">${i}</button>`;
-    html+=`<button class="pagination-btn" onclick="cambiarPag(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>»</button>`;
+    if(pag.length === 0){
+        grid.innerHTML = '<div class="text-center py-5"><h3>No hay productos</h3></div>';
+        return;
+    }
+    grid.innerHTML = pag.map(p => `
+        <div class="product-card">
+            <input type="checkbox" class="product-checkbox" id="chk_${p.id}" ${seleccionados.has(p.id) ? 'checked' : ''} onchange="toggleSel(${p.id})">
+            <div class="product-brand">${p.marca}</div>
+            <div class="product-name">${p.nombre}</div>
+            <div class="product-details">Clave: ${p.clave}</div>
+            <div class="product-price">$${parseFloat(p.precio).toFixed(2)}</div>
+        </div>
+    `).join('');
+    
+    const totalPages = Math.ceil(filtrados.length / itemsPerPage);
+    let html = `<button class="pagination-btn" onclick="cambiarPag(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>«</button>`;
+    for(let i = 1; i <= totalPages; i++) html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="cambiarPag(${i})">${i}</button>`;
+    html += `<button class="pagination-btn" onclick="cambiarPag(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>»</button>`;
     document.getElementById('pagination').innerHTML = html;
 }
 
-function cambiarPag(p) { const total = Math.ceil(filtrar().length/itemsPerPage); if(p>=1 && p<=total){ currentPage=p; renderizar(); window.scrollTo({top:300}); } }
+function cambiarPag(p) { 
+    const total = Math.ceil(filtrar().length / itemsPerPage); 
+    if(p >= 1 && p <= total){ 
+        currentPage = p; 
+        renderizar(); 
+        window.scrollTo({top: 300}); 
+    } 
+}
 
-document.getElementById('showPerPage')?.addEventListener('change',(e)=>{itemsPerPage=parseInt(e.target.value); currentPage=1; renderizar();});
-document.getElementById('sortBy')?.addEventListener('change',(e)=>{currentSort=e.target.value; currentPage=1; renderizar();});
-document.getElementById('btnBuscar')?.addEventListener('click',()=>{searchTerm=document.getElementById('buscador').value; currentPage=1; renderizar();});
-document.getElementById('cotizarSeleccionadosBtn')?.addEventListener('click',cotizarSel);
-document.getElementById('cotizarTodosBtn')?.addEventListener('click',()=>{selTodos(); setTimeout(cotizarSel,100);});
-renderizar(); actContador();
+document.getElementById('showPerPage')?.addEventListener('change', (e) => { itemsPerPage = parseInt(e.target.value); currentPage = 1; renderizar(); });
+document.getElementById('sortBy')?.addEventListener('change', (e) => { currentSort = e.target.value; currentPage = 1; renderizar(); });
+document.getElementById('btnBuscar')?.addEventListener('click', () => { searchTerm = document.getElementById('buscador').value; currentPage = 1; renderizar(); });
+document.getElementById('cotizarSeleccionadosBtn')?.addEventListener('click', cotizarSel);
+document.getElementById('cotizarTodosBtn')?.addEventListener('click', () => { selTodos(); setTimeout(cotizarSel, 100); });
 
+renderizar(); 
+actContador();
+cargarSeleccionadosDesdeStorage();
 </script>
 
 <!-- ========== FOOTER ========== -->
