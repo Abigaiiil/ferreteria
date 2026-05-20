@@ -1,29 +1,17 @@
 FROM php:8.2-fpm
 
-# Instalar dependencias
-RUN apt-get update && apt-get install -y \
-    nginx \
-    libsqlite3-dev \
-    curl \
-    && docker-php-ext-install pdo pdo_sqlite
+RUN apt-get update && apt-get install -y nginx libsqlite3-dev curl && docker-php-ext-install pdo pdo_sqlite
 
-# Crear directorio
 WORKDIR /var/www/html
 
-# Copiar archivos
 COPY . .
 
-# Permisos para SQLite
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && touch /var/www/html/gorilla_tools.db \
-    && chmod 666 /var/www/html/gorilla_tools.db
+RUN echo '#!/bin/bash\nphp-fpm -D\nnginx -g "daemon off;"' > /entrypoint.sh && chmod +x /entrypoint.sh
 
-# Copiar configuración de Nginx (crea la carpeta docker si no existe)
-COPY docker/nginx.conf /etc/nginx/sites-available/default
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN echo 'server { listen 10000; server_name _; root /var/www/html; index index.php index.html; location / { try_files $uri $uri/ /index.php?$query_string; } location ~ \.php$ { fastcgi_pass 127.0.0.1:9000; fastcgi_index index.php; fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; include fastcgi_params; } }' > /etc/nginx/sites-available/default
+
+RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
 EXPOSE 10000
 
-CMD ["/entrypoint.sh"]
+CMD ["/bin/bash", "/entrypoint.sh"]
