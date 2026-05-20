@@ -55,9 +55,9 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 
-<header class="header-main py-3"><div class="container-fluid px-5"><div class="row align-items-center"><div class="col-md-2"><a href="index.php"><img src="Logo_GorilaTools-removebg.png" style="max-height: 70px;" onerror="this.src='https://via.placeholder.com/150x70?text=Gorilla+Tools'"></a></div><div class="col-md-6"><div class="input-group search-bar"><input type="text" id="buscador" class="form-control" placeholder="Buscar productos..."><button class="btn btn-light" id="btnBuscar"><i class="bi bi-search"></i></button></div></div><div class="col-md-4 d-flex justify-content-end align-items-center text-white"><i class="bi bi-person-circle fs-4 me-2"></i><a href="Ferreteria_Facturacion_BORRADOR.html" class="text-white text-decoration-none">Mi cuenta</a></div></div></div></header>
+<header class="header-main py-3"><div class="container-fluid px-5"><div class="row align-items-center"><div class="col-md-2"><a href="index.php"><img src="Logo_GorilaTools-removebg.png" style="max-height: 70px;" onerror="this.src='https://via.placeholder.com/150x70?text=Gorilla+Tools'"></a></div><div class="col-md-6"><div class="input-group search-bar"><input type="text" id="buscador" class="form-control" placeholder="Buscar productos..."><button class="btn btn-light" id="btnBuscar"><i class="bi bi-search"></i></button></div></div><div class="col-md-4 d-flex justify-content-end align-items-center text-white"><i class="bi bi-person-circle fs-4 me-2"></i><a href="Ferreteria_Facturacion_BORRADOR.php" class="text-white text-decoration-none">Mi cuenta</a></div></div></div></header>
 
-<nav class="nav-secondary py-2"><div class="container"><ul class="nav justify-content-start gap-4 text-uppercase fw-bold"><li class="nav-item"><a href="index.php" class="nav-link text-white">Inicio</a></li><li class="nav-item"><a href="Ferreteria_Facturacion_BORRADOR.html" class="nav-link text-white">Facturación</a></li><li class="nav-item"><a href="Ferreteria_Cotizacion_BORRADOR.html" class="nav-link text-white">Cotizador</a></li><li class="nav-item"><a href="Ferreteria_UbicarTienda_BORRADOR.html" class="nav-link text-white">Ubica tu tienda</a></li></ul></div></nav>
+<nav class="nav-secondary py-2"><div class="container"><ul class="nav justify-content-start gap-4 text-uppercase fw-bold"><li class="nav-item"><a href="index.php" class="nav-link text-white">Inicio</a></li><li class="nav-item"><a href="Ferreteria_Facturacion_BORRADOR.php" class="nav-link text-white">Facturación</a></li><li class="nav-item"><a href="Ferreteria_Cotizacion_BORRADOR.php" class="nav-link text-white">Cotizador</a></li><li class="nav-item"><a href="Ferreteria_UbicarTienda_BORRADOR.php" class="nav-link text-white">Ubica tu tienda</a></li></ul></div></nav>
 
 <main class="container my-4">
     <div class="breadcrumb-custom">
@@ -105,47 +105,24 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    
 const productos = <?php echo json_encode($productos); ?>;
-
-function mostrarModal(mensaje, titulo = "Notificación") {
-    const modalElement = document.getElementById('modalAlerta');
-    if (modalElement) {
-        document.getElementById('modalAlertaTitulo').innerText = titulo;
-        document.getElementById('modalAlertaMensaje').innerHTML = mensaje;
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+    function mostrarModal(mensaje, titulo = "Notificación") {
+        const modalElement = document.getElementById('modalAlerta');
+        if (modalElement) {
+            document.getElementById('modalAlertaTitulo').innerText = titulo;
+            document.getElementById('modalAlertaMensaje').innerHTML = mensaje;
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
     }
-}
 
 let seleccionados = new Set(), currentPage = 1, itemsPerPage = 24, currentSort = "relevancia", searchTerm = "";
+function notificar(m) { const t=document.getElementById('toastNotification'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
+function actContador() { document.getElementById('selectedCount').innerText = seleccionados.size; }
+function toggleSel(id) { if(seleccionados.has(id)) seleccionados.delete(id); else seleccionados.add(id); actContador(); const cb=document.getElementById(`chk_${id}`); if(cb) cb.checked=seleccionados.has(id); }
+function filtrar() { let f = productos.filter(p=>!searchTerm||p.nombre.toLowerCase().includes(searchTerm)||p.clave.toLowerCase().includes(searchTerm)); if(currentSort==='precio-asc') f.sort((a,b)=>a.precio-b.precio); if(currentSort==='precio-desc') f.sort((a,b)=>b.precio-a.precio); return f; }
 
-function notificar(m) { 
-    const t=document.getElementById('toastNotification'); 
-    t.textContent=m; 
-    t.style.display='block'; 
-    setTimeout(()=>t.style.display='none',3000); 
-}
-
-function actContador() { 
-    document.getElementById('selectedCount').innerText = seleccionados.size; 
-}
-
-function toggleSel(id) { 
-    if(seleccionados.has(id)) seleccionados.delete(id); 
-    else seleccionados.add(id); 
-    actContador(); 
-    const cb=document.getElementById(`chk_${id}`); 
-    if(cb) cb.checked=seleccionados.has(id); 
-}
-
-function filtrar() { 
-    let f = productos.filter(p=>!searchTerm||p.nombre.toLowerCase().includes(searchTerm)||p.clave.toLowerCase().includes(searchTerm)); 
-    if(currentSort==='precio-asc') f.sort((a,b)=>a.precio-b.precio); 
-    if(currentSort==='precio-desc') f.sort((a,b)=>b.precio-a.precio); 
-    return f; 
-}
-
-// ✅ Función cotizar con validación de sesión y modal
 function cotizar(productosList) {
     if (productosList.length === 0) {
         notificar('No hay productos seleccionados');
@@ -160,20 +137,76 @@ function cotizar(productosList) {
                 return;
             }
             
-            localStorage.setItem('carritoGorilla', JSON.stringify(productosList.map(p => ({ ...p, cantidad: 1 }))));
-            notificar(`${productosList.length} producto(s) enviados al cotizador`);
-            setTimeout(() => {
-                window.location.href = 'Ferreteria_Cotizacion_BORRADOR.php';
-            }, 500);
+            // Preparar productos
+            const productosParaCarrito = productosList.map(p => ({ 
+                id: p.id, 
+                codigo: p.codigo || p.clave || 'N/A',
+                descripcion: p.nombre,
+                precio: parseFloat(p.precio),
+                cantidad: 1
+            }));
+            
+            // Guardar en sesión PHP mediante fetch
+            fetch('api_guardar_carrito.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productos: productosParaCarrito })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    notificar(`${productosList.length} producto(s) enviados al cotizador`);
+                    seleccionados.clear();
+                    actContador();
+                    renderizar();
+                    
+                    setTimeout(() => {
+                        window.location.href = 'Ferreteria_Cotizacion_BORRADOR.php';
+                    }, 500);
+                } else {
+                    mostrarModal('Error al guardar', 'Error');
+                }
+            });
         })
         .catch(() => {
-            mostrarModal('Error de conexión. Intenta de nuevo.', 'Error');
+            mostrarModal('Error de conexión', 'Error');
         });
 }
 
+
 function cotizarSel() { 
-    cotizar(productos.filter(p=>seleccionados.has(p.id))); 
+    // Obtener productos seleccionados directamente del DOM
+    const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+    const idsSeleccionados = Array.from(checkboxes).map(cb => parseInt(cb.id.replace('chk_', '')));
+    
+    console.log("✅ Checkboxes marcados:", checkboxes.length);
+    console.log("✅ IDs seleccionados:", idsSeleccionados);
+    
+    if (idsSeleccionados.length === 0) {
+        notificar('No hay productos seleccionados');
+        return;
+    }
+    
+    const productosSeleccionados = productos.filter(p => idsSeleccionados.includes(p.id));
+    console.log("📦 Productos a cotizar:", productosSeleccionados);
+    
+    cotizar(productosSeleccionados);
 }
+function toggleSel(id) { 
+    if(seleccionados.has(id)) {
+        seleccionados.delete(id);
+    } else {
+        seleccionados.add(id);
+    }
+    actContador(); 
+    
+    // Asegurar que el checkbox refleje el estado
+    const cb = document.getElementById(`chk_${id}`); 
+    if(cb) cb.checked = seleccionados.has(id);
+    
+    console.log("🔄 Toggle producto:", id, "Seleccionados:", Array.from(seleccionados));
+}
+
 
 function renderizar() {
     const filtrados = filtrar();
@@ -181,20 +214,8 @@ function renderizar() {
     const start = (currentPage-1)*itemsPerPage;
     const pag = filtrados.slice(start, start+itemsPerPage);
     const grid = document.getElementById('productsGrid');
-    if(pag.length===0){
-        grid.innerHTML='<div class="text-center py-5"><h3>No hay productos</h3></div>';
-        return;
-    }
-    grid.innerHTML = pag.map(p=>`
-        <div class="product-card">
-            <input type="checkbox" class="product-checkbox" id="chk_${p.id}" ${seleccionados.has(p.id)?'checked':''} onchange="toggleSel(${p.id})">
-            <div class="product-brand">${p.marca}</div>
-            <div class="product-name">${p.nombre}</div>
-            <div class="product-details">Clave: ${p.clave}</div>
-            <div class="product-price">$${p.precio.toFixed(2)}</div>
-        </div>
-    `).join('');
-    
+    if(pag.length===0){grid.innerHTML='<div class="text-center py-5"><h3>No hay productos</h3></div>';return;}
+    grid.innerHTML = pag.map(p=>`<div class="product-card"><input type="checkbox" class="product-checkbox" id="chk_${p.id}" ${seleccionados.has(p.id)?'checked':''} onchange="toggleSel(${p.id})"><div class="product-brand">${p.marca}</div><div class="product-name">${p.nombre}</div><div class="product-details">Clave: ${p.clave}</div><div class="product-price">$${p.precio.toFixed(2)}</div></div>`).join('');
     const totalPages = Math.ceil(filtrados.length/itemsPerPage);
     let html = `<button class="pagination-btn" onclick="cambiarPag(${currentPage-1})" ${currentPage===1?'disabled':''}>«</button>`;
     for(let i=1;i<=totalPages;i++) html+=`<button class="pagination-btn ${i===currentPage?'active':''}" onclick="cambiarPag(${i})">${i}</button>`;
@@ -202,22 +223,15 @@ function renderizar() {
     document.getElementById('pagination').innerHTML = html;
 }
 
-function cambiarPag(p) { 
-    const total = Math.ceil(filtrar().length/itemsPerPage); 
-    if(p>=1 && p<=total){ 
-        currentPage=p; 
-        renderizar(); 
-        window.scrollTo({top:300}); 
-    } 
-}
+function cambiarPag(p) { const total = Math.ceil(filtrar().length/itemsPerPage); if(p>=1 && p<=total){ currentPage=p; renderizar(); window.scrollTo({top:300}); } }
 
 document.getElementById('showPerPage')?.addEventListener('change',(e)=>{itemsPerPage=parseInt(e.target.value); currentPage=1; renderizar();});
 document.getElementById('sortBy')?.addEventListener('change',(e)=>{currentSort=e.target.value; currentPage=1; renderizar();});
 document.getElementById('btnBuscar')?.addEventListener('click',()=>{searchTerm=document.getElementById('buscador').value; currentPage=1; renderizar();});
 document.getElementById('cotizarSeleccionadosBtn')?.addEventListener('click',cotizarSel);
+document.getElementById('cotizarTodosBtn')?.addEventListener('click',()=>{selTodos(); setTimeout(cotizarSel,100);});
+renderizar(); actContador();
 
-renderizar(); 
-actContador();
 </script>
 
 <!-- ========== FOOTER ========== -->
@@ -240,7 +254,7 @@ actContador();
 </a>
             </div>
         </div>
-            <div style="flex: 1; min-width: 150px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Enlaces rápidos</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 10px;"><a href="index.php" style="color: white; text-decoration: none;">Inicio</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Facturacion_BORRADOR.html" style="color: white; text-decoration: none;">Facturación</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Cotizacion_BORRADOR.html" style="color: white; text-decoration: none;">Cotizador</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_UbicarTienda_BORRADOR.html" style="color: white; text-decoration: none;">Ubica tu tienda</a></li></ul></div>
+            <div style="flex: 1; min-width: 150px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Enlaces rápidos</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 10px;"><a href="index.php" style="color: white; text-decoration: none;">Inicio</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Facturacion_BORRADOR.php" style="color: white; text-decoration: none;">Facturación</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Cotizacion_BORRADOR.php" style="color: white; text-decoration: none;">Cotizador</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_UbicarTienda_BORRADOR.php" style="color: white; text-decoration: none;">Ubica tu tienda</a></li></ul></div>
             <div style="flex: 1; min-width: 200px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Contacto</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 10px;"><i class="bi bi-telephone-fill" style="margin-right: 10px;"></i> 868 455 9524</li><li style="margin-bottom: 10px;"><i class="bi bi-envelope-fill" style="margin-right: 10px;"></i> comprasonline@gorillatools.com</li><li style="margin-bottom: 10px;"><i class="bi bi-geo-alt-fill" style="margin-right: 10px;"></i> Matamoros / Reynosa, Tamaulipas</li></ul></div>
             <div style="flex: 1; min-width: 180px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Horarios</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 8px;">Lun - Vie: 8:00 - 20:00</li><li style="margin-bottom: 8px;">Sábado: 9:00 - 18:00</li><li style="margin-bottom: 8px;">Domingo: Cerrado</li></ul></div>
         </div>

@@ -1,3 +1,6 @@
+
+
+mquinaaaaaaaaaaaaaaaaaaaaaaas
 <?php
 session_start();
 require_once 'conexion.php';
@@ -119,60 +122,27 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-
+    
 const productos = <?php echo json_encode($productos); ?>;
-
-function mostrarModal(mensaje, titulo = "Notificación") {
-    const modalElement = document.getElementById('modalAlerta');
-    if (modalElement) {
-        document.getElementById('modalAlertaTitulo').innerText = titulo;
-        document.getElementById('modalAlertaMensaje').innerHTML = mensaje;
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+    function mostrarModal(mensaje, titulo = "Notificación") {
+        const modalElement = document.getElementById('modalAlerta');
+        if (modalElement) {
+            document.getElementById('modalAlertaTitulo').innerText = titulo;
+            document.getElementById('modalAlertaMensaje').innerHTML = mensaje;
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
     }
-}
 
-let seleccionados = new Set();
-let currentPage = 1;
-let itemsPerPage = 24;
-let currentSort = "relevancia";
-let searchTerm = "";
+let seleccionados = new Set(), currentPage = 1, itemsPerPage = 24, currentSort = "relevancia", searchTerm = "";
+function notificar(m) { const t=document.getElementById('toastNotification'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
+function actContador() { document.getElementById('selectedCount').innerText = seleccionados.size; }
+function toggleSel(id) { if(seleccionados.has(id)) seleccionados.delete(id); else seleccionados.add(id); actContador(); const cb=document.getElementById(`chk_${id}`); if(cb) cb.checked=seleccionados.has(id); }
+function filtrar() { let f = productos.filter(p=>!searchTerm||p.nombre.toLowerCase().includes(searchTerm)||p.clave.toLowerCase().includes(searchTerm)); if(currentSort==='precio-asc') f.sort((a,b)=>a.precio-b.precio); if(currentSort==='precio-desc') f.sort((a,b)=>b.precio-a.precio); return f; }
 
-function notificar(mensaje, tipo = 'success') {
-    const toast = document.getElementById('toastNotification');
-    toast.textContent = mensaje;
-    toast.style.backgroundColor = tipo === 'success' ? '#28a745' : '#dc3545';
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
-}
-
-function actualizarContador() {
-    document.getElementById('selectedCount').innerText = seleccionados.size;
-}
-
-function toggleSeleccion(id) {
-    if (seleccionados.has(id)) {
-        seleccionados.delete(id);
-    } else {
-        seleccionados.add(id);
-    }
-    actualizarContador();
-    const cb = document.getElementById(`chk_${id}`);
-    if (cb) cb.checked = seleccionados.has(id);
-}
-
-function obtenerFiltrados() {
-    let filtered = productos.filter(p => !searchTerm || p.nombre.toLowerCase().includes(searchTerm) || p.clave.toLowerCase().includes(searchTerm) || p.codigo.includes(searchTerm));
-    if (currentSort === 'precio-asc') filtered.sort((a, b) => a.precio - b.precio);
-    if (currentSort === 'precio-desc') filtered.sort((a, b) => b.precio - a.precio);
-    if (currentSort === 'nombre') filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    return filtered;
-}
-
-// ✅ ÚNICA función cotizar (con validación de sesión)
 function cotizar(productosList) {
     if (productosList.length === 0) {
-        notificar('No hay productos seleccionados', 'error');
+        notificar('No hay productos seleccionados');
         return;
     }
     
@@ -183,102 +153,102 @@ function cotizar(productosList) {
                 mostrarModal('Debes iniciar sesión para cotizar productos', 'Acción no permitida');
                 return;
             }
-            localStorage.setItem('carritoGorilla', JSON.stringify(productosList.map(p => ({ ...p, cantidad: 1 }))));
-            notificar(`${productosList.length} producto(s) enviados al cotizador`);
-            setTimeout(() => {
-                window.location.href = 'Ferreteria_Cotizacion_BORRADOR.php';
-            }, 500);
+            
+            // Preparar productos
+            const productosParaCarrito = productosList.map(p => ({ 
+                id: p.id, 
+                codigo: p.codigo || p.clave || 'N/A',
+                descripcion: p.nombre,
+                precio: parseFloat(p.precio),
+                cantidad: 1
+            }));
+            
+            // Guardar en sesión PHP mediante fetch
+            fetch('api_guardar_carrito.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productos: productosParaCarrito })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    notificar(`${productosList.length} producto(s) enviados al cotizador`);
+                    seleccionados.clear();
+                    actContador();
+                    renderizar();
+                    
+                    setTimeout(() => {
+                        window.location.href = 'Ferreteria_Cotizacion_BORRADOR.php';
+                    }, 500);
+                } else {
+                    mostrarModal('Error al guardar', 'Error');
+                }
+            });
         })
         .catch(() => {
-            mostrarModal('Error de conexión. Intenta de nuevo.', 'Error');
+            mostrarModal('Error de conexión', 'Error');
         });
 }
 
-function cotizarSeleccionados() {
-    const seleccionadosList = productos.filter(p => seleccionados.has(p.id));
-    cotizar(seleccionadosList);
+
+function cotizarSel() { 
+    // Obtener productos seleccionados directamente del DOM
+    const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+    const idsSeleccionados = Array.from(checkboxes).map(cb => parseInt(cb.id.replace('chk_', '')));
+    
+    console.log("✅ Checkboxes marcados:", checkboxes.length);
+    console.log("✅ IDs seleccionados:", idsSeleccionados);
+    
+    if (idsSeleccionados.length === 0) {
+        notificar('No hay productos seleccionados');
+        return;
+    }
+    
+    const productosSeleccionados = productos.filter(p => idsSeleccionados.includes(p.id));
+    console.log("📦 Productos a cotizar:", productosSeleccionados);
+    
+    cotizar(productosSeleccionados);
 }
+function toggleSel(id) { 
+    if(seleccionados.has(id)) {
+        seleccionados.delete(id);
+    } else {
+        seleccionados.add(id);
+    }
+    actContador(); 
+    
+    // Asegurar que el checkbox refleje el estado
+    const cb = document.getElementById(`chk_${id}`); 
+    if(cb) cb.checked = seleccionados.has(id);
+    
+    console.log("🔄 Toggle producto:", id, "Seleccionados:", Array.from(seleccionados));
+}
+
 
 function renderizar() {
-    const filtrados = obtenerFiltrados();
-    document.getElementById('productCount').innerHTML = `(${filtrados.length} productos)`;
-    const start = (currentPage - 1) * itemsPerPage;
-    const paginados = filtrados.slice(start, start + itemsPerPage);
+    const filtrados = filtrar();
+    document.getElementById('productCount').innerHTML = `(${filtrados.length})`;
+    const start = (currentPage-1)*itemsPerPage;
+    const pag = filtrados.slice(start, start+itemsPerPage);
     const grid = document.getElementById('productsGrid');
-    
-    if (paginados.length === 0) {
-        grid.innerHTML = '<div class="text-center py-5"><h3>No se encontraron productos</h3></div>';
-        return;
-    }
-    
-    grid.innerHTML = paginados.map(p => `
-        <div class="product-card">
-            <input type="checkbox" class="product-checkbox" id="chk_${p.id}" ${seleccionados.has(p.id) ? 'checked' : ''} onchange="toggleSeleccion(${p.id})">
-            <div class="product-brand">${p.marca}</div>
-            <div class="product-name">${p.nombre}</div>
-            <div class="product-details">Clave: ${p.clave} | Código: ${p.codigo}</div>
-            <div class="product-price">$${p.precio.toFixed(2)}</div>
-        </div>
-    `).join('');
-    
-    const totalPages = Math.ceil(filtrados.length / itemsPerPage);
-    const pagDiv = document.getElementById('pagination');
-    if (totalPages <= 1) {
-        pagDiv.innerHTML = '';
-        return;
-    }
-    
-    let html = `<button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" onclick="cambiarPagina(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>« Anterior</button>`;
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-            html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="cambiarPagina(${i})">${i}</button>`;
-        } else if (i === currentPage - 2 || i === currentPage + 2) {
-            html += `<span class="px-2">...</span>`;
-        }
-    }
-    html += `<button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" onclick="cambiarPagina(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Siguiente »</button>`;
-    pagDiv.innerHTML = html;
+    if(pag.length===0){grid.innerHTML='<div class="text-center py-5"><h3>No hay productos</h3></div>';return;}
+    grid.innerHTML = pag.map(p=>`<div class="product-card"><input type="checkbox" class="product-checkbox" id="chk_${p.id}" ${seleccionados.has(p.id)?'checked':''} onchange="toggleSel(${p.id})"><div class="product-brand">${p.marca}</div><div class="product-name">${p.nombre}</div><div class="product-details">Clave: ${p.clave}</div><div class="product-price">$${p.precio.toFixed(2)}</div></div>`).join('');
+    const totalPages = Math.ceil(filtrados.length/itemsPerPage);
+    let html = `<button class="pagination-btn" onclick="cambiarPag(${currentPage-1})" ${currentPage===1?'disabled':''}>«</button>`;
+    for(let i=1;i<=totalPages;i++) html+=`<button class="pagination-btn ${i===currentPage?'active':''}" onclick="cambiarPag(${i})">${i}</button>`;
+    html+=`<button class="pagination-btn" onclick="cambiarPag(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>»</button>`;
+    document.getElementById('pagination').innerHTML = html;
 }
 
-function cambiarPagina(p) {
-    const total = Math.ceil(obtenerFiltrados().length / itemsPerPage);
-    if (p >= 1 && p <= total) {
-        currentPage = p;
-        renderizar();
-        window.scrollTo({ top: 300, behavior: 'smooth' });
-    }
-}
+function cambiarPag(p) { const total = Math.ceil(filtrar().length/itemsPerPage); if(p>=1 && p<=total){ currentPage=p; renderizar(); window.scrollTo({top:300}); } }
 
-document.getElementById('showPerPage')?.addEventListener('change', (e) => {
-    itemsPerPage = parseInt(e.target.value);
-    currentPage = 1;
-    renderizar();
-});
+document.getElementById('showPerPage')?.addEventListener('change',(e)=>{itemsPerPage=parseInt(e.target.value); currentPage=1; renderizar();});
+document.getElementById('sortBy')?.addEventListener('change',(e)=>{currentSort=e.target.value; currentPage=1; renderizar();});
+document.getElementById('btnBuscar')?.addEventListener('click',()=>{searchTerm=document.getElementById('buscador').value; currentPage=1; renderizar();});
+document.getElementById('cotizarSeleccionadosBtn')?.addEventListener('click',cotizarSel);
+document.getElementById('cotizarTodosBtn')?.addEventListener('click',()=>{selTodos(); setTimeout(cotizarSel,100);});
+renderizar(); actContador();
 
-document.getElementById('sortBy')?.addEventListener('change', (e) => {
-    currentSort = e.target.value;
-    currentPage = 1;
-    renderizar();
-});
-
-document.getElementById('btnBuscar')?.addEventListener('click', () => {
-    searchTerm = document.getElementById('buscador').value;
-    currentPage = 1;
-    renderizar();
-});
-
-document.getElementById('buscador')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        searchTerm = e.target.value;
-        currentPage = 1;
-        renderizar();
-    }
-});
-
-document.getElementById('cotizarSeleccionadosBtn')?.addEventListener('click', cotizarSeleccionados);
-
-renderizar();
-actualizarContador();
 </script>
 
 <!-- ========== FOOTER ========== -->
@@ -301,7 +271,7 @@ actualizarContador();
 </a>
             </div>
         </div>
-            <div style="flex: 1; min-width: 150px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Enlaces rápidos</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 10px;"><a href="index.php" style="color: white; text-decoration: none;">Inicio</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Facturacion_BORRADOR.html" style="color: white; text-decoration: none;">Facturación</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Cotizacion_BORRADOR.html" style="color: white; text-decoration: none;">Cotizador</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_UbicarTienda_BORRADOR.html" style="color: white; text-decoration: none;">Ubica tu tienda</a></li></ul></div>
+            <div style="flex: 1; min-width: 150px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Enlaces rápidos</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 10px;"><a href="index.php" style="color: white; text-decoration: none;">Inicio</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Facturacion_BORRADOR.php" style="color: white; text-decoration: none;">Facturación</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_Cotizacion_BORRADOR.php" style="color: white; text-decoration: none;">Cotizador</a></li><li style="margin-bottom: 10px;"><a href="Ferreteria_UbicarTienda_BORRADOR.php" style="color: white; text-decoration: none;">Ubica tu tienda</a></li></ul></div>
             <div style="flex: 1; min-width: 200px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Contacto</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 10px;"><i class="bi bi-telephone-fill" style="margin-right: 10px;"></i> 868 455 9524</li><li style="margin-bottom: 10px;"><i class="bi bi-envelope-fill" style="margin-right: 10px;"></i> comprasonline@gorillatools.com</li><li style="margin-bottom: 10px;"><i class="bi bi-geo-alt-fill" style="margin-right: 10px;"></i> Matamoros / Reynosa, Tamaulipas</li></ul></div>
             <div style="flex: 1; min-width: 180px;"><h4 style="color: #f47920; font-size: 18px; margin-bottom: 15px;">Horarios</h4><ul style="list-style: none; padding: 0;"><li style="margin-bottom: 8px;">Lun - Vie: 8:00 - 20:00</li><li style="margin-bottom: 8px;">Sábado: 9:00 - 18:00</li><li style="margin-bottom: 8px;">Domingo: Cerrado</li></ul></div>
         </div>
