@@ -1,0 +1,13 @@
+name: Mantener Render Activo
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hacer ping a la app de Render
+        run: curl -I https://ferreteria-439o.onrender.com/
