@@ -153,7 +153,15 @@ if (isset($_SESSION['usuario_id'])) {
             <table class="tabla-cotizacion">
                 <thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Total</th><th>Fecha límite</th><th>Días restantes</th><th>Acción</th></tr></thead>
                 <tbody id="promesaBody"><tr><td colspan="7" class="empty-msg">No hay productos en promesa</td></tr></tbody>
-            </table>
+            </table><br><br>
+            <div class="d-flex justify-content-end gap-2 mb-3">
+    <button class="btn btn-success" onclick="pagarTodoPromesa()">
+        <i class="bi bi-credit-card"></i> Pagar Todo
+    </button>
+    <button class="btn btn-danger" onclick="eliminarTodoPromesa()">
+        <i class="bi bi-trash"></i> Eliminar Todo
+    </button>
+</div>
         </div>
     </div>
 
@@ -202,6 +210,105 @@ let catalogoProductos = productosBD;
 let carrito = [];
 let promesas = [];
 let comprados = [];
+
+
+// ========== PAGAR TODA LA LISTA DE PROMESAS ==========
+async function pagarTodoPromesa() {
+    if (promesas.length === 0) {
+        mostrarModal('No hay productos en promesa', 'Carrito vacío');
+        return;
+    }
+    
+    // Mostrar loading
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+    
+    try {
+        // Registrar compra de todos los productos en promesa
+        const productosParaComprar = promesas.map(item => ({
+            id: item.id,
+            cantidad: item.cantidad,
+            precio: item.precio
+        }));
+        
+        const response = await fetch('api_registrar_compra.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productos: productosParaComprar })
+        });
+        
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            // Mostrar mensaje con el ticket número
+            const ticket = resultado.numero_ticket;
+            
+            // Mover todos a comprados
+            promesas.forEach(item => {
+                comprados.push({
+                    ...item,
+                    fechaCompra: new Date().toISOString()
+                });
+            });
+            
+            promesas = [];
+            guardarDatos();
+            renderizarTodo();
+            
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            
+            // Preguntar si desea facturar
+            const deseaFacturar = confirm(`✅ ¡Compra completada!\n\nNúmero de ticket: ${ticket}\n\n¿Deseas facturar esta compra?`);
+            
+            if (deseaFacturar) {
+                window.location.href = `Ferreteria_Facturacion_BORRADOR.php?ticket=${ticket}`;
+            } else {
+                mostrarModal(`Compra realizada. Ticket: ${ticket}`, '¡Éxito!');
+            }
+        } else {
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            mostrarModal(resultado.mensaje, 'Error');
+        }
+    } catch (error) {
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+        mostrarModal('Error de conexión con el servidor', 'Error');
+    }
+}
+
+// ========== ELIMINAR TODA LA LISTA DE PROMESAS ==========
+function eliminarTodoPromesa() {
+    if (promesas.length === 0) {
+        mostrarModal('No hay productos en promesa', 'Carrito vacío');
+        return;
+    }
+    
+    mostrarModal(`
+        <div class="text-center">
+            <p>¿Estás seguro de que deseas <strong>eliminar TODOS los productos</strong> de la lista de promesas?</p>
+            <p>Se devolverán al stock y no podrás recuperarlos.</p>
+            <button class="btn btn-danger mt-2" onclick="confirmarEliminarTodo()">Sí, eliminar todo</button>
+            <button class="btn btn-secondary mt-2 ms-2" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+    `, 'Confirmar eliminación');
+}
+
+function confirmarEliminarTodo() {
+    // Cerrar el modal actual
+    const modalElement = document.getElementById('modalAlerta');
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    if (modal) modal.hide();
+    
+    // Devolver stock
+    promesas.forEach(item => {
+        const producto = catalogoProductos.find(p => p.id === item.id);
+        if (producto) producto.stock += item.cantidad;
+    });
+    
+    promesas = [];
+    guardarDatos();
+    renderizarTodo();
+    mostrarModal('Todos los productos han sido eliminados de la lista de promesas', 'Eliminado');
+}
 
 // ========== FUNCIONES DE NOTIFICACIÓN ==========
 function mostrarModal(mensaje, titulo = "Notificación") {
@@ -490,27 +597,34 @@ async function finalizarCompra(id) {
     const item = promesas.find(p => p.id === id);
     if (!item) return;
     
+    // Mostrar loading
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+    
     try {
         const response = await fetch('api_registrar_compra.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                productos: [{ 
-                    id: item.id, 
-                    cantidad: item.cantidad, 
-                    precio: item.precio 
+            body: JSON.stringify({
+                productos: [{
+                    id: item.id,
+                    cantidad: item.cantidad,
+                    precio: item.precio
                 }],
-                esPromesa: true 
+                esPromesa: true
             })
         });
         
         const resultado = await response.json();
         
         if (resultado.success) {
+            const ticket = resultado.numero_ticket;
+            
             // Mover de promesas a comprados
             comprados.push({
                 ...item,
-                fechaCompra: new Date().toISOString()
+                fechaCompra: new Date().toISOString(),
+                numero_ticket: ticket
             });
             
             // Eliminar de promesas
@@ -519,15 +633,22 @@ async function finalizarCompra(id) {
             guardarDatos();
             renderizarTodo();
             
-            mostrarModal(`¡Compra finalizada!<br>Guarda el siguiente texto para poder facturar:<br><strong>${resultado.numero_ticket}</strong>`, 'Compra exitosa');
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
             
-            if (confirm('¿Deseas facturar esta compra?')) {
-                window.location.href = `Ferreteria_Facturacion_BORRADOR.php?ticket=${resultado.numero_ticket}`;
+            // PRIMERO mostrar el ticket, LUEGO preguntar
+            const deseaFacturar = confirm(`¡Compra finalizada!\n\nNúmero de ticket: ${ticket}\n\n¿Deseas facturar esta compra?`);
+            
+            if (deseaFacturar) {
+                window.location.href = `Ferreteria_Facturacion_BORRADOR.php?ticket=${ticket}`;
+            } else {
+                mostrarModal(`Compra realizada. Ticket: ${ticket}`, '¡Éxito!');
             }
         } else {
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
             mostrarModal(resultado.mensaje, 'Error');
         }
     } catch (error) {
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
         mostrarModal('Error de conexión con el servidor', 'Error');
     }
 }

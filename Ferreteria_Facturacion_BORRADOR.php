@@ -293,6 +293,16 @@ if (!isset($_SESSION['usuario_id'])) {
 let ticketValidadoActual = null;
 let ticketYaFacturado = false;
 
+// Cargar ticket desde URL si existe
+const urlParams = new URLSearchParams(window.location.search);
+const ticketUrl = urlParams.get('ticket');
+if (ticketUrl) {
+    document.getElementById('validarTicketInput').value = ticketUrl;
+    setTimeout(() => {
+        validarTicket();
+    }, 500);
+}
+
 async function validarTicket() {
     const ticketIngresado = document.getElementById('validarTicketInput').value.trim().toUpperCase();
     const resultadoDiv = document.getElementById('resultadoValidacion');

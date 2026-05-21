@@ -347,8 +347,11 @@ if (isset($_SESSION['usuario_id'])) {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+
+
 let usuarioActivo = null;
 let carrito = JSON.parse(localStorage.getItem('carritoGorilla')) || [];
+
 
 // Función para mostrar modal personalizado (con botón Aceptar)
 function mostrarModal(mensaje, titulo = "Notificación") {
@@ -370,6 +373,8 @@ function mostrarNotificacion(mensaje, tipo = 'success') {
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
+
+
 
 async function registrarUsuario(datos) {
     if (datos.password !== datos.confirmPassword) {
@@ -406,7 +411,7 @@ async function iniciarSesion(email, password) {
         const resultado = await response.json();
         if (resultado.success) {
             usuarioActivo = resultado.usuario;
-            mostrarModal(`¡Bienvenido, ${usuarioActivo.nombre}!`, '¡Hola!', 'success');
+            mostrarModal(`¡Bienvenid@, ${usuarioActivo.nombre}!`, '¡Hola!', 'success');
             actualizarUISesion();
             return true;
         } else {
@@ -431,7 +436,7 @@ function actualizarUISesion() {
     const container = document.getElementById('userMenuContainer');
     if (!container) return;
     if (usuarioActivo) {
-        container.innerHTML = `<div class="dropdown"><a href="#" class="text-white text-decoration-none dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown"><i class="bi bi-person-circle fs-4"></i><span>${usuarioActivo.nombre.split(' ')[0]}</span></a><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="Ferreteria_Facturacion_BORRADOR.php">Mis facturas</a></li><li><a class="dropdown-item" href="Ferreteria_Cotizacion_BORRADOR.php">Mis cotizaciones</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item text-danger" href="logout.php">Cerrar sesión</a></li></ul></div>`;
+        container.innerHTML = `<div class="dropdown"><a href="#" class="text-white text-decoration-none dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown"><i class="bi bi-person-circle fs-4"></i><span>${usuarioActivo.nombre.split(' ')[0]}</span></a><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="Ferreteria_Cotizacion_BORRADOR.php?tab=comprados">Mis compras</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item text-danger" href="logout.php">Cerrar sesión</a></li></ul></div>`;
     } else {
         container.innerHTML = `<a href="#" class="text-white text-decoration-none d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#loginModal"><i class="bi bi-person-circle fs-4"></i><span>Iniciar sesión</span></a>`;
     }
@@ -528,6 +533,8 @@ document.getElementById('cartIcon')?.addEventListener('click', () => {
         mostrarModal(`📦 Tienes ${totalItems} producto(s) en tu carrito.<br><strong>Total: $${total.toFixed(2)}</strong>`, 'Mi carrito');
     }
 });
+
+
 
 // Inicializar
 actualizarUISesion();
