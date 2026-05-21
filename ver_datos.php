@@ -1,19 +1,6 @@
 <?php
-
-session_start();
+// ver_datos.php - Ver los datos guardados en Render (SIN LOGIN)
 require_once 'conexion.php';
-
-if (!isset($_SESSION['usuario_id'])) {
-    echo "❌ Debes iniciar sesión para ver los datos";
-    exit;
-}
-
-$usuario_id = $_SESSION['usuario_id'];
-
-
-$stmt = $pdo->prepare("SELECT nombre, email FROM usuarios WHERE id = ?");
-$stmt->execute([$usuario_id]);
-$usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -29,14 +16,15 @@ $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #003d71; color: white; }
+        .advertencia { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Visor de Base de Datos</h1>
-        <div class="datos">
-            <strong>Usuario logueado:</strong> <?php echo htmlspecialchars($usuario['nombre']); ?> (<?php echo htmlspecialchars($usuario['email']); ?>)
+            <a href="index.php" class="float-end">← Volver al inicio</a>
         </div>
+        
+        <h1>Visor de Base de Datos</h1>
 
         <h2>Usuarios registrados</h2>
         <table class="table table-bordered">
